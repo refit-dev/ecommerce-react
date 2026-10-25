@@ -12,7 +12,7 @@ if (!stripeKey) {
 }
 
 const stripe = isValidKey ? new Stripe(stripeKey, {
-  apiVersion: '2023-10-16',
+  apiVersion: '2026-09-30.endive',
 }) : null
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
