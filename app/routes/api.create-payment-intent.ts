@@ -5,7 +5,7 @@ const stripeKey = process.env.STRIPE_SECRET_KEY?.trim()
 const isValidKey = stripeKey && (stripeKey.startsWith('sk_test_') || stripeKey.startsWith('sk_live_'))
 
 const stripe = isValidKey ? new Stripe(stripeKey, {
-  apiVersion: '2023-10-16',
+  apiVersion: '2026-09-30.endive',
 }) : null
 
 // Resource route - only action, no component

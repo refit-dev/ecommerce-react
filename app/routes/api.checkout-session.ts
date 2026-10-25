@@ -1,11 +1,30 @@
 import Stripe from 'stripe'
 
+// Typed like the removed field under old stripe types, like the new location under new ones.
+type CheckoutShippingDetails<T> = T extends { shipping_details: infer S }
+  ? S
+  : T extends { collected_information: infer C }
+    ? NonNullable<C> extends { shipping_details: infer S }
+      ? S | null
+      : null
+    : null;
+
+// The old top-level field when present (old-version payloads), otherwise
+// collected_information.shipping_details, which holds only address and name.
+function getCheckoutShippingDetails<T extends object>(session: T): CheckoutShippingDetails<T> {
+  const legacy: unknown = Reflect.get(session, 'shipping_details');
+  const collected: unknown = Reflect.get(session, 'collected_information');
+  const moved: unknown =
+    collected && typeof collected === 'object' ? Reflect.get(collected, 'shipping_details') : undefined;
+  return (legacy !== undefined ? legacy : (moved ?? null)) as CheckoutShippingDetails<T>;
+}
+
 // Check if Stripe key is configured and valid format
 const stripeKey = process.env.STRIPE_SECRET_KEY?.trim()
 const isValidKey = stripeKey && (stripeKey.startsWith('sk_test_') || stripeKey.startsWith('sk_live_'))
 
 const stripe = isValidKey ? new Stripe(stripeKey, {
-  apiVersion: '2023-10-16',
+  apiVersion: '2026-09-30.endive',
 }) : null
 
 // Resource route - GET handler
@@ -36,7 +55,7 @@ export async function loader({ request }: { request: Request }) {
       status: session.status,
       customer_email: session.customer_details?.email || session.customer_email,
       amount_total: session.amount_total,
-      shipping_details: session.shipping_details,
+      shipping_details: (getCheckoutShippingDetails(session)),
       metadata: session.metadata,
       payment_intent: session.payment_intent,
     }), {
